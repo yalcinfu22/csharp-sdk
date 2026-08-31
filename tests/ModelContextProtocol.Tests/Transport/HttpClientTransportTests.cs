@@ -154,7 +154,7 @@ public class HttpClientTransportTests : LoggedTest
         // Every POST is sent with HttpCompletionOption.ResponseHeadersRead, so the underlying
         // connection only returns to the pool once the response is consumed or disposed. The
         // success path (an accepted response whose body is unused) previously did neither,
-        // stranding one connection per sent message until the GC finalized the response.
+        // leaving cleanup nondeterministic and potentially stranding the connection.
         using var mockHttpHandler = new MockHttpHandler();
         using var httpClient = new HttpClient(mockHttpHandler);
         await using var transport = new HttpClientTransport(_transportOptions, httpClient, LoggerFactory);
@@ -191,7 +191,7 @@ public class HttpClientTransportTests : LoggedTest
 
         Assert.True(postContent.Disposed,
             "The POST response was not disposed after SendMessageAsync completed; " +
-            "with HttpCompletionOption.ResponseHeadersRead this strands the connection until the GC finalizes the response.");
+            "with HttpCompletionOption.ResponseHeadersRead this can strand the connection because cleanup is no longer deterministic.");
     }
 
     [Fact]
